@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Lottery Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* General Styles */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body {
+            min-height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            background: linear-gradient(45deg, #ff00cc, #3333ff, #00ffcc, #ffeb3b);
+            background-size: 400% 400%; animation: gradientBG 10s ease infinite;
+            overflow: auto; perspective: 1000px; padding: 20px 0;
+        }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        /* Container Styles */
+        .container {
+            width: 90%; max-width: 450px; background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px); border-radius: 20px; padding: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(255,255,255,0.2);
+            text-align: center; color: white;
+        }
+        
+        h1 { font-size: 28px; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.4); }
+        .subtitle { font-size: 14px; margin-bottom: 15px; color: #ffe600; font-weight: bold; }
+        
+        /* Auth Form Styles */
+        .auth-input {
+            width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.5);
+            background: rgba(0,0,0,0.2); color: white; font-size: 16px;
+        }
+        .auth-input::placeholder { color: #ccc; }
+        .toggle-link { color: #ffe600; text-decoration: none; font-weight: bold; cursor: pointer; display: block; margin-top: 15px; }
+
+        /* Game Page Specific Styles */
+        .balance-display { background: rgba(0,0,0,0.3); padding: 10px 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2); }
+        .balance-display p { font-size: 14px; color: #eee; }
+        .balance-display h2 { font-size: 32px; color: #00ffcc; font-weight: 900; text-shadow: 0 0 10px #00ffcc; }
+        .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .logout-btn { background: none; border: 1px solid #ff00cc; color: #ff00cc; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        
+        .number-inputs { display: flex; justify-content: center; gap: 15px; margin-bottom: 15px; }
+        .num-box { width: 60px; height: 70px; font-size: 30px; font-weight: 900; text-align: center; border: none; border-radius: 10px; background: linear-gradient(145deg, #ffffff, #e6e6e6); box-shadow: 5px 5px 10px rgba(0,0,0,0.3); color: #333; outline: none; transition: transform 0.2s; }
+        .num-box:focus { transform: scale(1.1); border: 2px solid #ff00cc; }
+        
+        /* Buttons */
+        .btn { background: linear-gradient(90deg, #ff00cc, #3333ff); color: white; border: none; padding: 12px 0; font-size: 16px; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.3); transition: all 0.2s; text-transform: uppercase; width: 100%; margin: 5px 0; }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 15px 25px rgba(0,0,0,0.4); }
+        .btn:disabled { background: linear-gradient(145deg, #777, #555); cursor: not-allowed; transform: none; box-shadow: none;}
+        .btn-green { background: linear-gradient(90deg, #00ff00, #009900); }
+        .btn-yellow { background: linear-gradient(90deg, #ffeb3b, #ffc107); color: #333; }
+        .btn-blue { background: linear-gradient(90deg, #00aaff, #0055ff); }
+        .btn-red { background: linear-gradient(90deg, #ff0000, #cc0000); }
+        .btn-purple { background: linear-gradient(90deg, #8e44ad, #9b59b6); }
+        
+        .btn-prize { background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000); background-size: 400%; animation: glowing 20s linear infinite; color: #fff; text-shadow: 1px 1px 2px black; grid-column: 1 / -1; border: 2px solid #fff; }
+        @keyframes glowing { 0% { background-position: 0 0; } 50% { background-position: 400% 0; } 100% { background-position: 0 0; } }
+
+        .menu-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .date-selector { margin-bottom: 20px; }
+        .date-selector label { display: block; margin-bottom: 5px; font-size: 14px; }
+        .date-selector input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.5); background: rgba(0,0,0,0.2); color: white; font-family: 'Poppins'; font-size: 16px; }
+        
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
+        .modal-content { background: rgba(30, 30, 30, 0.95); border-radius: 20px; padding: 20px; margin: 5% auto; width: 95%; max-width: 500px; border: 1px solid rgba(255,255,255,0.3); text-align: left; color: white; max-height: 90vh; overflow-y: auto;}
+        .modal-content h2, .modal-content h3 { text-align: center; margin-bottom: 15px; color: #00ffcc;}
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        
+        /* List Items */
+        .list-item { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.2);}
+        .admin-box { background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #ff00cc; }
+        .admin-box h4 { color: #ffeb3b; margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 5px;}
+        
+        .prize-box { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #ffe600; text-align: center; }
+        .deposit-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+        .receipt-image { max-width: 100%; border-radius: 5px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- Authentication Container -->
+    <div id="authContainer" class="container">
+        <div id="loginForm">
+            <h1>Welcome Back!</h1>
+            <p class="subtitle">Please login to play</p>
+            <form onsubmit="handleLogin(event)">
+                <input type="text" id="loginUsername" class="auth-input" placeholder="Username" required>
+                <input type="password" id="loginPassword" class="auth-input" placeholder="Password" required>
+                <button type="submit" class="btn">Login</button>
+            </form>
+            <a onclick="toggleAuthForms()" class="toggle-link">Don't have an account? Register</a>
+        </div>
+        <div id="registerForm" style="display: none;">
+            <h1>Create Account</h1>
+            <p class="subtitle">Join the game today!</p>
+            <form onsubmit="handleRegister(event)">
+                <input type="text" id="registerUsername" class="auth-input" placeholder="Choose a Username" required>
+                <input type="password" id="registerPassword" class="auth-input" placeholder="Create a Password" required>
+                <button type="submit" class="btn btn-green">Register</button>
+            </form>
+            <a onclick="toggleAuthForms()" class="toggle-link">Already have an account? Login</a>
+        </div>
+    </div>
+
+    <!-- Main Game Container -->
+    <div id="gameContainer" style="display: none;">
+        <div class="container">
+            <div class="user-header">
+                <h1 id="welcomeMessage">Daily Lottery</h1>
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
+            <div class="balance-display">
+                <p>Your Balance</p>
+                <h2 id="mainBalanceDisplay">₹0.00</h2>
+            </div>
+            <p class="subtitle" id="gameStatus">Loading Status...</p>
+            <p style="margin-bottom: 10px;">Apna 3 Ank (Digit) Chunein:</p>
+            <div class="number-inputs">
+                <input type="text" id="n1" class="num-box" maxlength="1" oninput="limit(this)" onkeyup="moveToNext(this, 'n2')">
+                <input type="text" id="n2" class="num-box" maxlength="1" oninput="limit(this)" onkeyup="moveToNext(this, 'n3')">
+                <input type="text" id="n3" class="num-box" maxlength="1" oninput="limit(this)">
+            </div>
+            <div class="date-selector">
+                <label for="betDateInput">Kis Date ke liye Bet Lagana Hai?</label>
+                <input type="date" id="betDateInput" onchange="updateGameStatus()">
+            </div>
+            <button class="btn btn-green" id="placeBetBtn" onclick="placeBet()">Place Bet (₹10)</button>
+            
+            <div class="menu-buttons">
+                <button class="btn btn-prize" onclick="showModal('prizeModal')">🎉 View Prize Info 💸</button>
+                <button class="btn btn-yellow" onclick="showModal('myBetsModal')">My Bets</button>
+                <button class="btn btn-yellow" onclick="showModal('resultsModal')">Results</button>
+                <button class="btn btn-blue" onclick="showModal('depositModal')">Deposit</button>
+                <button class="btn" onclick="showModal('withdrawalModal')">Withdraw</button>
+                <button class="btn btn-purple" disabled style="grid-column: 1 / -1;">Result Open Time: 9:00 PM</button>
+                <button class="btn btn-red" onclick="openAdmin()" style="grid-column: 1 / -1;">S support team</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals for User -->
+    <div id="prizeModal" class="modal"><div class="modal-content"><span class="close-btn" onclick="closeModal('prizeModal')">&times;</span><h2>🏆 Winning Prizes 🏆</h2><div class="prize-box"><h3>(1) 3 Ank Pass: ₹10,000</h3></div><div class="prize-box"><h3>(2) 2 Ank Pass: ₹1,000</h3></div><div class="prize-box"><h3>(3) 1 Ank Pass: ₹100</h3></div></div></div>
+    <div id="myBetsModal" class="modal"><div class="modal-content"><span class="close-btn" onclick="closeModal('myBetsModal')">&times;</span><h2>My Placed Bets</h2><div id="myBetsList"></div></div></div>
+    <div id="resultsModal" class="modal"><div class="modal-content"><span class="close-btn" onclick="closeModal('resultsModal')">&times;</span><h2>Past Results</h2><div id="resultsList"></div></div></div>
+    
+    <div id="withdrawalModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('withdrawalModal')">&times;</span>
+            <h2>Withdraw Winnings</h2>
+            <p style="text-align: center;">Withdrawable Balance:</p>
+            <h3 style="color:#00ff00" id="withdrawalBalanceDisplay">₹0.00</h3>
+            <input type="number" id="withdrawalAmountInput" class="auth-input" placeholder="Enter Amount (Max ₹500)" style="margin-top: 15px;">
+            <input type="text" id="upiIdInput" class="auth-input" placeholder="Enter Your UPI ID">
+            <button class="btn btn-green" onclick="requestWithdrawal()">Request Withdrawal</button>
+        </div>
+    </div>
+    
+    <!-- Deposit Modal with Multiple Steps -->
+    <div id="depositModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('depositModal')">&times;</span>
+            <!-- Step 1: Plan Selection -->
+            <div id="depositPlanSelection">
+                <h2>Select Deposit Amount</h2>
+                <div class="deposit-plans">
+                    <button class="btn" onclick="showUpiPayment(100)">₹100</button>
+                    <button class="btn" onclick="showUpiPayment(200)">₹200</button>
+                    <button class="btn" onclick="showUpiPayment(500)">₹500</button>
+                    <button class="btn btn-yellow" onclick="showUpiPayment(1000)">₹1,000</button>
+                    <button class="btn btn-yellow" onclick="showUpiPayment(5000)">₹5,000</button>
+                    <button class="btn btn-green" onclick="showUpiPayment(10000)">₹10,000</button>
+                </div>
+            </div>
+            <!-- Step 2: Payment Info -->
+            <div id="depositPaymentInfo" style="display: none; text-align: center;">
+                 <h2>Complete Payment</h2>
+                 <p style="margin-bottom: 20px;">Scan the QR code or click 'Pay Now'. After payment, return here and upload the receipt.</p>
+                 <div id="upiQrCode" style="margin: 0 auto 20px auto; background: white; padding: 10px; width: fit-content; border-radius: 10px;"></div>
+                 <a id="upiPaymentLink" href="#" class="btn btn-green" style="text-decoration: none; display: block;">Pay Now</a>
+                 <button class="btn btn-yellow" style="margin-top: 10px;" onclick="showReceiptUpload()">I Have Paid, Upload Receipt</button>
+                 <button class="btn btn-red" style="margin-top: 10px;" onclick="showDepositPlans()">Back</button>
+            </div>
+            <!-- Step 3: Receipt Upload -->
+            <div id="depositReceiptUpload" style="display: none; text-align: center;">
+                <h2 id="uploadHeader">Upload Payment Receipt</h2>
+                <p>Please select the screenshot of your successful payment.</p>
+                <input type="file" id="receiptFile" class="auth-input" accept="image/*" style="margin-top: 20px;">
+                <button class="btn btn-green" onclick="submitReceipt()">Submit for Verification</button>
+                <button class="btn btn-red" style="margin-top: 10px;" onclick="showUpiPayment(currentDepositAmount)">Back to QR Code</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= ADMIN MODALS ================= -->
+    
+    <div id="adminDashboardModal" class="modal"><div class="modal-content"><span class="close-btn" onclick="closeModal('adminDashboardModal')">&times;</span><h2>🛠️ Admin Panel</h2><button class="btn btn-blue" onclick="showAdminUsers()">👥 Manage Users</button><button class="btn btn-yellow" onclick="showAdminResults()">🏆 Manage Results</button></div></div>
+    <div id="adminUsersModal" class="modal"><div class="modal-content"><span class="close-btn" onclick="closeModal('adminUsersModal'); showModal('adminDashboardModal')">&times;</span><h2>👥 All Users</h2><div id="adminUserList"></div></div></div>
+    
+    <div id="userDetailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('userDetailsModal'); showModal('adminUsersModal')">&times;</span>
+            <h2 id="detailUsername">User: </h2>
+            
+            <div class="admin-box"><h4>💰 Balance Control</h4><p>Current Balance: <b id="detailBalance" style="color:#00ff00"></b></p><input type="number" id="editBalanceInput" class="auth-input" style="margin-top:10px" placeholder="Enter new balance"><button class="btn btn-green" onclick="saveUserBalance()">Update Balance</button></div>
+            
+            <div class="admin-box"><h4>📥 Deposit Requests</h4><div id="detailDeposits" style="max-height: 200px; overflow-y:auto; font-size:14px;"></div></div>
+            <div class="admin-box"><h4>📤 Withdrawal Requests</h4><div id="detailRequests" style="max-height: 100px; overflow-y:auto; font-size:14px;"></div></div>
+            <div class="admin-box"><h4>🎲 Bet History</h4><div id="detailBets" style="max-height: 150px; overflow-y:auto; font-size:14px;"></div></div>
+        </div>
+    </div>
+
+    <div id="adminResultsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('adminResultsModal'); showModal('adminDashboardModal')">&times;</span>
+            <h2>🏆 Manage Results</h2>
+            <div class="admin-box"><h4>Declare New Result</h4><input type="date" id="declareDateInput" class="auth-input"><div class="number-inputs"><input type="text" id="w1" class="num-box" maxlength="1" oninput="limit(this)"><input type="text" id="w2" class="num-box" maxlength="1" oninput="limit(this)"><input type="text" id="w3" class="num-box" maxlength="1" oninput="limit(this)"></div><button class="btn btn-green" onclick="declareResultAdmin()">Declare Result</button></div>
+            <div class="admin-box"><h4>Edit Past Results</h4><div id="adminPastResultsList" style="max-height: 200px; overflow-y:auto;"></div></div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_PASSWORD = "111aaa@@@&&&258090₹";
+        const NOTIFICATION_SOUND = 'data:audio/mpeg;base64,SUQzBAAAAAAAIBAFVAAAAAAAADYAAEtOVUxGTEsAACAASU5GTwAAAAgAAAAxMjM0NTY3ODkAAAAAVGJVNAwAAAAyMC4wMS4yMDI0AEFULgAAAAAAAABIT1NULgAAAAAAAABDUkVBVE9SLgAAAAAAAABTT0ZUQQAAAAAAAEVOQ09ELgAAAAAAAABTT0ZULkVOQ08uAAAAAAAASU5GTwAAAAgAAAAxMjM0NTY3ODkAAAAAVGJVNAwAAAAyMC4wMS4yMDI0AEFULgAAAAAAAABIT1NULgAAAAAAAABDUkVBVE9SLgAAAAAAAABTT0ZUQQAAAAAAAEVOQ09ELgAAAAAAAABTT0ZULkVOQ08uAAAAAExhdmY1OC43Ni4xMDAA//uQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAAgAAAABAAAEgAAAAFNNaW5nAYAAANIAcAAAAAAAExAAAKkPAAAAAP/7kGQADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//uQZAMAAAEQUP//uQZAMAQAAAMgAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVaxdaçãoTE9/AAAAAUlAAAAIBkAAANIAcAAAAAADIQAAAKBIAAAAAAAAACB3aW5kb3dzICg2LjEuNzYwMSksIGNvbnZlcnRlZCBieSBLbm93biBVc2VyIG9uIDcgSmFuIDIwMjQgMDc6MTMgUE0/+IDxjbGFzcz5zdHJvbmc8L2NsYXNzPnRoZWlyICA8L2NsYXNzPm93biA8L2NsYXNzPnN0cm9uZzwvY2xhc3M+d29yZHMgPC9jbGFzcz5hbmQgPC9jbGFzcz5leGFtcGxlcy4gPC9jbGFzcz48Y2xhc3M+QWxzbywgPC9jbGFzcz53aGF0ICA8L2NsYXNzPnRoZXkgPC9jbGFzcz53YW50IDwvY2xhc3M+dG8gPC9jbGFzcz5kaXNjdXNzIDwvY2xhc3M+YWJvdXQuPC9jbGFzcz48L2Rpdj48L2Rpdj4NCg0KDQoNCg0KDQoNCg0KDQo8ZGl2IGNsYXNzPSJhZGQtY29udGFpbmVyIj4gPGRpdiBjbGFzcz0iYWRkLXdyYXBwZXIiPiA8c3BhbiBjbGFzcz0iYWRkLXRleHQiPkFkdmVydGlzZW1lbnQ8L3NwYW4+IDxkaXYgaWQ9ImFkZC1zbG90Ij4gPC9kaXY+IDwvZGl2PjwvZGl2Pg0KDQoNCg0KDQoNCjwvYm9keT4NCjwvaHRtbD4=';
+        
+        let currentUser = null; 
+        let selectedAdminUser = null; 
+        let currentDepositAmount = 0;
+
+        window.onload = function() {
+            const loggedInUser = localStorage.getItem('loggedInUser');
+            if (loggedInUser) { currentUser = loggedInUser; showGamePage(); } 
+            else { showAuthPage(); }
+        };
+
+        function saveUserData(key, data) {
+            if (!currentUser) return;
+            const userData = JSON.parse(localStorage.getItem(currentUser)) || {};
+            userData[key] = data;
+            localStorage.setItem(currentUser, JSON.stringify(userData));
+        }
+
+        function loadUserData(key) {
+            if (!currentUser) return null;
+            const userData = JSON.parse(localStorage.getItem(currentUser)) || {};
+            return userData[key];
+        }
+
+        function toggleAuthForms() {
+            document.getElementById('loginForm').style.display = document.getElementById('loginForm').style.display === 'none' ? 'block' : 'none';
+            document.getElementById('registerForm').style.display = document.getElementById('registerForm').style.display === 'none' ? 'block' : 'none';
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const u = document.getElementById('registerUsername').value.trim();
+            const p = document.getElementById('registerPassword').value;
+            let users = JSON.parse(localStorage.getItem('users')) || [];
+            if (users.some(user => user.username === u)) { alert("Username exists!"); return; }
+            users.push({ username: u, password: p });
+            localStorage.setItem('users', JSON.stringify(users));
+            // Initialize with mainBalance and winningBalance
+            localStorage.setItem(u, JSON.stringify({ mainBalance: 0, winningBalance: 0, allBets: {} }));
+            alert("Registered! Please login."); toggleAuthForms();
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('loginUsername').value.trim();
+            const p = document.getElementById('loginPassword').value;
+            let users = JSON.parse(localStorage.getItem('users')) || [];
+            if (users.find(user => user.username === u && user.password === p)) {
+                localStorage.setItem('loggedInUser', u); currentUser = u; showGamePage();
+            } else { alert("Invalid credentials."); }
+        }
+
+        function handleLogout() { localStorage.removeItem('loggedInUser'); currentUser = null; showAuthPage(); }
+
+        function showAuthPage() { document.getElementById('authContainer').style.display = 'block'; document.getElementById('gameContainer').style.display = 'none'; }
+        function showGamePage() { 
+            document.getElementById('authContainer').style.display = 'none'; document.getElementById('gameContainer').style.display = 'block'; 
+            document.getElementById('welcomeMessage').innerText = `Welcome, ${currentUser}`;
+            initializeDateInput(); updateGameStatus(); updateMainBalanceDisplay();
+        }
+        function showModal(id) { 
+            if(id === 'myBetsModal') updateMyBetsList();
+            if(id === 'resultsModal') updateResultsList();
+            if(id === 'withdrawalModal') {
+                const winningBalance = parseFloat(loadUserData('winningBalance')) || 0;
+                document.getElementById('withdrawalBalanceDisplay').innerText = `₹${winningBalance.toFixed(2)}`;
+            }
+            document.getElementById(id).style.display = 'block'; 
+        }
+        
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+            if (id === 'depositModal') {
+                showDepositPlans(); // Always reset to the first step
+            }
+        }
+
+        function limit(el) { el.value = el.value.replace(/[^0-9]/g, ''); }
+        function moveToNext(cur, nextId) { if (cur.value.length >= 1) document.getElementById(nextId).focus(); }
+        
+        function initializeDateInput() {
+            const dateInput = document.getElementById('betDateInput');
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today; dateInput.min = today;
+        }
+
+        function updateMainBalanceDisplay() {
+            const balance = parseFloat(loadUserData('mainBalance')) || 0;
+            document.getElementById('mainBalanceDisplay').innerText = `₹${balance.toFixed(2)}`;
+        }
+
+        function placeBet() {
+            let n1 = document.getElementById('n1').value, n2 = document.getElementById('n2').value, n3 = document.getElementById('n3').value;
+            if (!n1 || !n2 || !n3) { alert("Enter all 3 numbers."); return; }
+            let bal = parseFloat(loadUserData('mainBalance')) || 0;
+            if (bal < 10) { alert("Insufficient balance!"); return; }
+            
+            const date = document.getElementById('betDateInput').value;
+            const bet = `${n1}${n2}${n3}`;
+
+            saveUserData('mainBalance', bal - 10); updateMainBalanceDisplay();
+            let allBets = loadUserData('allBets') || {};
+            if (!allBets[date]) allBets[date] = [];
+            allBets[date].push(bet); saveUserData('allBets', allBets);
+            
+            document.getElementById('n1').value = ""; document.getElementById('n2').value = ""; document.getElementById('n3').value = "";
+            alert(`Bet placed: ${bet} for ${date}!`);
+        }
+
+        function requestWithdrawal() {
+            const upiId = document.getElementById('upiIdInput').value.trim();
+            const amountInput = document.getElementById('withdrawalAmountInput');
+            const amount = parseFloat(amountInput.value);
+
+            if (!upiId) { alert("Please enter your UPI ID."); return; }
+            if (isNaN(amount) || amount <= 0) { alert("Please enter a valid amount to withdraw."); return; }
+            if (amount > 500) { alert("Maximum withdrawal amount is ₹500 per request."); return; }
+
+            let winningBal = parseFloat(loadUserData('winningBalance')) || 0;
+            let mainBal = parseFloat(loadUserData('mainBalance')) || 0;
+
+            if (amount > winningBal) {
+                alert("Withdrawal amount cannot exceed your withdrawable winning balance.");
+                return;
+            }
+            
+            // Deduct from both balances
+            saveUserData('mainBalance', mainBal - amount);
+            saveUserData('winningBalance', winningBal - amount);
+            
+            let reqs = JSON.parse(localStorage.getItem('withdrawRequests')) || [];
+            reqs.push({ user: currentUser, amount: amount, upi: upiId, date: new Date().toLocaleString(), status: 'Pending' });
+            localStorage.setItem('withdrawRequests', JSON.stringify(reqs));
+            
+            updateMainBalanceDisplay(); // Update main display on game page
+            closeModal('withdrawalModal');
+            amountInput.value = ''; // Clear inputs for next time
+            document.getElementById('upiIdInput').value = '';
+            // --- MODIFIED: Show new withdrawal message to user ---
+            alert("Withdrawal request for ₹" + amount.toFixed(2) + " has been submitted. 24 ghante ke ander ap ke UPI I'd ya bank account me ad kar diya jayga.");
+        }
+
+        function updateMyBetsList() {
+            const bets = loadUserData('allBets') || {};
+            let html = '';
+            Object.keys(bets).sort().reverse().forEach(date => {
+                html += `<div class="admin-box"><h4>${date}</h4>`;
+                bets[date].forEach(b => html += `<p>Bet: <b>${b}</b></p>`);
+                html += `</div>`;
+            });
+            document.getElementById('myBetsList').innerHTML = html || 'No bets placed.';
+        }
+
+        function updateResultsList() {
+            const results = JSON.parse(localStorage.getItem('pastResults')) || [];
+            let html = '';
+            results.forEach(r => html += `<div class="list-item"><span>${r.date}</span> <b style="color:#00ffcc">${r.number}</b></div>`);
+            document.getElementById('resultsList').innerHTML = html || 'No results declared.';
+        }
+
+        function updateGameStatus() {
+            const date = document.getElementById('betDateInput').value;
+            const results = JSON.parse(localStorage.getItem('pastResults')) || [];
+            const result = results.find(r => r.date === date);
+            const statusEl = document.getElementById('gameStatus');
+            const betBtn = document.getElementById('placeBetBtn');
+            if (result) { statusEl.innerText = `Result Out: ${result.number}! Bets Closed.`; statusEl.style.color = '#ff6b6b'; betBtn.disabled = true; } 
+            else { statusEl.innerText = `Bets Open!`; statusEl.style.color = '#ffe600'; betBtn.disabled = false; }
+        }
+
+        // --- DEPOSIT MODAL LOGIC ---
+        function showDepositPlans() {
+            document.getElementById('depositPlanSelection').style.display = 'block';
+            document.getElementById('depositPaymentInfo').style.display = 'none';
+            document.getElementById('depositReceiptUpload').style.display = 'none';
+        }
+
+        function showUpiPayment(amount) {
+            if (typeof amount !== 'number') return;
+            currentDepositAmount = amount;
+            
+            const upiId = '6261549160-3@ybl';
+            const payeeName = 'Lottery Game';
+            const transactionNote = `Deposit of ${amount} for ${currentUser}`;
+            const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${encodeURIComponent(amount)}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
+
+            document.getElementById('upiPaymentLink').href = upiUri;
+            document.getElementById('upiPaymentLink').innerHTML = `Pay ₹${amount} Now`;
+            const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiUri)}`;
+            document.getElementById('upiQrCode').innerHTML = `<img src="${qrCodeUrl}" alt="Scan UPI QR to Pay">`;
+
+            document.getElementById('depositPlanSelection').style.display = 'none';
+            document.getElementById('depositPaymentInfo').style.display = 'block';
+            document.getElementById('depositReceiptUpload').style.display = 'none';
+        }
+
+        function showReceiptUpload() {
+            document.getElementById('uploadHeader').innerText = `Upload Receipt for ₹${currentDepositAmount}`;
+            document.getElementById('depositPlanSelection').style.display = 'none';
+            document.getElementById('depositPaymentInfo').style.display = 'none';
+            document.getElementById('depositReceiptUpload').style.display = 'block';
+        }
+
+        function submitReceipt() {
+            const fileInput = document.getElementById('receiptFile');
+            const file = fileInput.files[0];
+            if (!file) { alert('Please select a receipt image.'); return; }
+
+            const reader = new FileReader();
+            reader.onloadend = function() {
+                const base64String = reader.result;
+                let reqs = JSON.parse(localStorage.getItem('depositRequests')) || [];
+                reqs.push({ 
+                    id: Date.now().toString(),
+                    user: currentUser, 
+                    amount: currentDepositAmount, 
+                    receipt: base64String, 
+                    date: new Date().toLocaleString(), 
+                    status: 'Pending' 
+                });
+                localStorage.setItem('depositRequests', JSON.stringify(reqs));
+                
+                // --- MODIFIED: Set notification flag for admin ---
+                localStorage.setItem('newDepositNotification', 'true');
+
+                alert('Receipt submitted for verification. An admin will review it shortly.');
+                fileInput.value = '';
+                closeModal('depositModal');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ==========================================
+        //         ADMIN PANEL LOGIC
+        // ==========================================
+        
+        function openAdmin() {
+            const pass = prompt("Enter Admin Password:");
+            if (pass !== ADMIN_PASSWORD) { alert("Wrong Password!"); return; }
+
+            // --- MODIFIED: Check for new deposit notification on admin login ---
+            if (localStorage.getItem('newDepositNotification') === 'true') {
+                try {
+                    const audio = new Audio(NOTIFICATION_SOUND);
+                    audio.play();
+                    alert("🔔 New Deposit Request Received! 🔔");
+                } catch (e) {
+                    console.error("Audio playback failed:", e);
+                    alert("New Deposit Request Received!"); // Fallback alert
+                } finally {
+                    localStorage.removeItem('newDepositNotification'); // Clear the flag
+                }
+            }
+            
+            showModal('adminDashboardModal');
+        }
+
+        function showAdminUsers() {
+            closeModal('adminDashboardModal');
+            showModal('adminUsersModal');
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            let html = '';
+            users.forEach(u => {
+                const uData = JSON.parse(localStorage.getItem(u.username)) || {};
+                const bal = parseFloat(uData.mainBalance) || 0;
+                const winBal = parseFloat(uData.winningBalance) || 0;
+                html += `<div class="list-item"><div><b>${u.username}</b> <br> <small>Bal: ₹${bal.toFixed(2)} (Win: ₹${winBal.toFixed(2)})</small></div><button class="btn btn-blue" style="width:auto; padding:5px 15px;" onclick="openUserDetails('${u.username}')">Manage</button></div>`;
+            });
+            document.getElementById('adminUserList').innerHTML = html || '<p>No users found.</p>';
+        }
+
+        function openUserDetails(username) {
+            selectedAdminUser = username;
+            closeModal('adminUsersModal');
+            showModal('userDetailsModal');
+            
+            const uData = JSON.parse(localStorage.getItem(username)) || {};
+            const mainBal = parseFloat(uData.mainBalance) || 0;
+            const winBal = parseFloat(uData.winningBalance) || 0;
+            
+            document.getElementById('detailUsername').innerText = `User: ${username}`;
+            document.getElementById('detailBalance').innerHTML = `₹${mainBal.toFixed(2)} (Winnings: ₹${winBal.toFixed(2)})`;
+            document.getElementById('editBalanceInput').value = mainBal;
+
+            // Deposit Requests
+            const allDeposits = JSON.parse(localStorage.getItem('depositRequests')) || [];
+            const userDeposits = allDeposits.filter(r => r.user === username);
+            let depositHtml = '';
+            userDeposits.reverse().forEach(r => {
+                let statusColor = r.status === 'Pending' ? 'yellow' : (r.status === 'Approved' ? 'lime' : 'red');
+                depositHtml += `<div style="border-bottom:1px solid #444; padding:5px 0; margin-bottom: 5px;">
+                    <p>₹${r.amount} | <span style="color:${statusColor}">${r.status}</span> <br><small>${r.date}</small></p>
+                    <img src="${r.receipt}" class="receipt-image" alt="Receipt">`;
+                if(r.status === 'Pending') {
+                    depositHtml += `<div style="display:flex; gap:10px; margin-top:10px;">
+                        <button class="btn btn-green" style="width:100%; padding:5px" onclick="approveDeposit('${r.id}')">Approve</button>
+                        <button class="btn btn-red" style="width:100%; padding:5px" onclick="rejectDeposit('${r.id}')">Reject</button>
+                    </div>`;
+                }
+                depositHtml += `</div>`;
+            });
+            document.getElementById('detailDeposits').innerHTML = depositHtml || 'No deposit requests.';
+
+            // Withdrawal Requests
+            const allReqs = JSON.parse(localStorage.getItem('withdrawRequests')) || [];
+            const userReqs = allReqs.filter(r => r.user === username);
+            let reqHtml = '';
+            userReqs.reverse().forEach(r => reqHtml += `<p style="border-bottom:1px solid #444; padding:5px 0;">₹${r.amount} | UPI: ${r.upi} | <span style="color:yellow">${r.status}</span></p>`);
+            document.getElementById('detailRequests').innerHTML = reqHtml || 'No withdrawal requests.';
+
+            // Bet History
+            const allBets = uData.allBets || {};
+            let betHtml = '';
+            Object.keys(allBets).forEach(d => { betHtml += `<b>${d}</b>: ${allBets[d].join(', ')}<br>`; });
+            document.getElementById('detailBets').innerHTML = betHtml || 'No bets.';
+        }
+
+        function saveUserBalance() {
+            const newBal = document.getElementById('editBalanceInput').value;
+            if(newBal === "") return;
+            const uData = JSON.parse(localStorage.getItem(selectedAdminUser)) || {};
+            uData.mainBalance = parseFloat(newBal);
+            // Admin should decide if this affects winning balance. For simplicity, it only affects main balance.
+            localStorage.setItem(selectedAdminUser, JSON.stringify(uData));
+            alert(`Balance updated for ${selectedAdminUser}`);
+            openUserDetails(selectedAdminUser);
+            if(selectedAdminUser === currentUser) updateMainBalanceDisplay();
+        }
+        
+        function approveDeposit(reqId) {
+            let reqs = JSON.parse(localStorage.getItem('depositRequests')) || [];
+            const reqIndex = reqs.findIndex(r => r.id === reqId);
+            if (reqIndex === -1) return;
+            
+            const req = reqs[reqIndex];
+            const uData = JSON.parse(localStorage.getItem(req.user)) || {};
+            uData.mainBalance = (parseFloat(uData.mainBalance) || 0) + parseFloat(req.amount);
+            localStorage.setItem(req.user, JSON.stringify(uData));
+
+            reqs[reqIndex].status = 'Approved';
+            localStorage.setItem('depositRequests', JSON.stringify(reqs));
+            alert(`Approved ₹${req.amount} for ${req.user}`);
+            openUserDetails(req.user); 
+            if(req.user === currentUser) updateMainBalanceDisplay();
+        }
+
+        function rejectDeposit(reqId) {
+            let reqs = JSON.parse(localStorage.getItem('depositRequests')) || [];
+            const reqIndex = reqs.findIndex(r => r.id === reqId);
+            if (reqIndex === -1) return;
+
+            reqs[reqIndex].status = 'Rejected';
+            localStorage.setItem('depositRequests', JSON.stringify(reqs));
+            alert(`Rejected deposit for ${reqs[reqIndex].user}`);
+            openUserDetails(reqs[reqIndex].user);
+        }
+
+        function showAdminResults() {
+            closeModal('adminDashboardModal');
+            showModal('adminResultsModal');
+            document.getElementById('declareDateInput').value = new Date().toISOString().split('T')[0];
+            renderAdminPastResults();
+        }
+
+        function renderAdminPastResults() {
+            const results = JSON.parse(localStorage.getItem('pastResults')) || [];
+            let html = '';
+            results.forEach((r, index) => {
+                html += `<div class="list-item"><div>${r.date} - <b style="color:#0ff">${r.number}</b></div><button class="btn btn-yellow" style="width:auto; padding:5px 10px;" onclick="editResult(${index})">Edit</button></div>`;
+            });
+            document.getElementById('adminPastResultsList').innerHTML = html || 'No results.';
+        }
+
+        function declareResultAdmin() {
+            const date = document.getElementById('declareDateInput').value;
+            const w1 = document.getElementById('w1').value, w2 = document.getElementById('w2').value, w3 = document.getElementById('w3').value;
+            if (!date || w1==="" || w2==="" || w3==="") { alert("Fill all fields."); return; }
+            const winNum = `${w1}${w2}${w3}`;
+            
+            let results = JSON.parse(localStorage.getItem('pastResults')) || [];
+            if (results.some(r => r.date === date)) { alert("Result for this date already declared!"); return; }
+            
+            results.unshift({ date: date, number: winNum });
+            localStorage.setItem('pastResults', JSON.stringify(results));
+            
+            let users = JSON.parse(localStorage.getItem('users')) || [];
+            let winNumArr = winNum.split('');
+            
+            users.forEach(u => {
+                let uData = JSON.parse(localStorage.getItem(u.username)) || {};
+                let userBets = (uData.allBets && uData.allBets[date]) ? uData.allBets[date] : [];
+                let todayWin = 0;
+                
+                userBets.forEach(bet => {
+                    let betArr = bet.split('');
+                    let match = 0;
+                    if(betArr[0] === winNumArr[0]) match++;
+                    if(betArr[1] === winNumArr[1]) match++;
+                    if(betArr[2] === winNumArr[2]) match++;
+                    
+                    if(match === 3) todayWin += 10000;
+                    else if(match === 2) todayWin += 1000;
+                    else if(match === 1) todayWin += 100;
+                });
+                
+                if(todayWin > 0) {
+                    uData.mainBalance = (parseFloat(uData.mainBalance) || 0) + todayWin;
+                    uData.winningBalance = (parseFloat(uData.winningBalance) || 0) + todayWin; // Add to winning balance
+                    localStorage.setItem(u.username, JSON.stringify(uData));
+                }
+            });
+
+            alert(`Result Declared: ${winNum} for ${date}`);
+            renderAdminPastResults();
+            if(currentUser) { updateGameStatus(); updateMainBalanceDisplay(); }
+            
+            document.getElementById('w1').value = ""; document.getElementById('w2').value = ""; document.getElementById('w3').value = "";
+        }
+
+        function editResult(index) {
+            let results = JSON.parse(localStorage.getItem('pastResults')) || [];
+            let r = results[index];
+            let newNum = prompt(`Edit result for ${r.date} (Current: ${r.number}):`, r.number);
+            
+            if (newNum !== null && newNum.length === 3) {
+                results[index].number = newNum;
+                localStorage.setItem('pastResults', JSON.stringify(results));
+                alert("Result updated. (Note: Winnings are NOT automatically recalculated for edited results).");
+                renderAdminPastResults();
+                if(currentUser) updateGameStatus();
+            } else if(newNum !== null) {
+                alert("Invalid format. Must be 3 digits.");
+            }
+        }
+    </script>
+</body>
+</html>
